@@ -1,7 +1,10 @@
 package com.example.reminder
 
+import java.util.*
+
 data class User(
+    var userId: String = "",
     val email: String = "",
-    val displayName: String = "",
-    val bio: String = ""
+    var displayName: String = "",
+    var bio: String = ""
 )

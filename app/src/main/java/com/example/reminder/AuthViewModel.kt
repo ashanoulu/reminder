@@ -11,6 +11,6 @@ class AuthViewModel : ViewModel(){
 
     suspend fun signIn(email: String, displayName: String){
         delay(2000)//simulating network call
-        _user.value = User(email, displayName)
+        _user.value = User("", email, displayName)
     }
 }

@@ -1,7 +1,5 @@
 package com.example.reminder
 
-import GoogleButton
-import android.nfc.Tag
 import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
@@ -57,9 +55,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             ReminderTheme {
                 navController = rememberNavController()
-                Navigation(navController = navController, User())
+                Navigation(navController = navController, User(), this)
 //                LoginScreen(auth, navController)
 //                LoginScreen(auth)
+//                BottomAppBarWithFab()
 
                 // A surface container using the 'background' color from the theme
 //                Surface(color = MaterialTheme.colors.background) {
@@ -160,7 +159,7 @@ fun LoginScreen(auth: FirebaseAuth, navController: NavController) {
                            .addOnCompleteListener {
                                if (it.isSuccessful) {
                                    Log.d(TAG,"user logged in")
-                                   navController.navigate(route = Screens.Profile.route)
+                                   navController.navigate(route = Screens.Reminders.route)
 //                                  navController.navigate(route = "profile")
                                } else {
                                    Log.d(TAG,"failed", it.exception)

@@ -1,5 +1,6 @@
 package com.example.reminder
 
+import android.content.Context
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.ExperimentalMaterialApi
@@ -8,10 +9,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.remi.RegisterScreen
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import java.security.AccessController
 
 @ExperimentalAnimationApi
 @ExperimentalFoundationApi
@@ -19,7 +18,8 @@ import java.security.AccessController
 @Composable
 fun Navigation(
     navController: NavHostController,
-    user: User
+    user: User,
+    con: Context
 ) {
     NavHost(navController = navController, startDestination = Screens.Login.route) {
         composable(route = Screens.Login.route) {
@@ -32,7 +32,7 @@ fun Navigation(
             RegisterScreen(Firebase.auth, navController)
         }
         composable(route = Screens.Reminders.route) {
-            RemindersScreen(Firebase.auth, navController)
+            RemindersScreen(Firebase.auth, navController, con)
         }
     }
 }
