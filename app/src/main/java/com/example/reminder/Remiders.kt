@@ -2,6 +2,8 @@ package com.example.reminder
 
 import android.app.TimePickerDialog
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.view.ContextThemeWrapper
@@ -46,6 +48,13 @@ import com.google.firebase.ktx.Firebase
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import com.google.firebase.firestore.CollectionReference
+import androidx.compose.material.AlertDialog as MaterialAlertDialog
 
 //@ExperimentalMaterialApi
 //@ExperimentalFoundationApi
@@ -64,7 +73,7 @@ fun RemindersScreen(auth: FirebaseAuth, navController: NavController, con: Conte
             TopAppBar(
                 title = {
                     Text(
-                        text = "Bottom App Bar with FAB"
+                        text = "My Reminders"
                     )
                 },
                 navigationIcon = {
@@ -90,15 +99,15 @@ fun RemindersScreen(auth: FirebaseAuth, navController: NavController, con: Conte
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-                Text(
-                    text = "My reminders",
-                    color = Color(0xff0b06a6),
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Bold,
-                    fontStyle = FontStyle.Italic,
-                    fontSize = 32.sp,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
+//                Text(
+//                    text = "My reminders",
+//                    color = Color(0xff0b06a6),
+//                    fontFamily = FontFamily.SansSerif,
+//                    fontWeight = FontWeight.Bold,
+//                    fontStyle = FontStyle.Italic,
+//                    fontSize = 32.sp,
+//                    modifier = Modifier.padding(top = 16.dp)
+//                )
 
 //                val hashMap:HashMap<Int,String> = HashMap<Int,String>() //define empty hashmap
 //                val remindersList1:HashMap<String,ReminderModel> = HashMap<String,ReminderModel>()//: MutableList<ReminderModel> = MutableList<ReminderModel>(10,10)
@@ -145,9 +154,12 @@ fun RemindersScreen(auth: FirebaseAuth, navController: NavController, con: Conte
 //
 //                        }
 
-                    items(queryResults.result.documents.size) { reminder ->
+                    val numOfItems: Int = queryResults.result.documents?.size
+
+                    if (numOfItems > 0)
+                    items(numOfItems) { reminder ->
                         ReminderItem(reminder, queryResults.result.documents,
-                            auth, con
+                            auth, con, navController
                         )
                     }
 //                    items(remindersList.size) { reminder ->
@@ -193,8 +205,9 @@ fun RemindersScreen(auth: FirebaseAuth, navController: NavController, con: Conte
                         BottomNavigationItem(
                             selected = selectedItem.value == "Setting",
                             onClick = {
-                                content.value = "Setting Screen"
-                                selectedItem.value = "setting"
+                                navController.navigate(route = Screens.Profile.route)
+
+//                                selectedItem.value = "setting"
                             },
                             icon = {
                                 Icon(Icons.Filled.AccountCircle, contentDescription = "setting")
@@ -207,9 +220,7 @@ fun RemindersScreen(auth: FirebaseAuth, navController: NavController, con: Conte
             )
         }
     )
-
-    AddNewReminder(openDialog, con, auth)
-
+    AddNewReminder(openDialog, con, auth, navController)
 }
 
 
@@ -217,7 +228,7 @@ fun RemindersScreen(auth: FirebaseAuth, navController: NavController, con: Conte
 @Composable
 fun ReminderItem(
     number: Int, remindList: MutableList<DocumentSnapshot>,
-    auth: FirebaseAuth, con: Context, ) {
+    auth: FirebaseAuth, con: Context, navController: NavController) {
     val focusManager = LocalFocusManager
         .current
     val time = remember { mutableStateOf("") }
@@ -240,6 +251,8 @@ fun ReminderItem(
     var reference = remindList.get(number).id
 
     val openDialog = remember { mutableStateOf(false) }
+    val openMessageBox = remember { mutableStateOf(false) }
+    val intent = remember { Intent(Intent.ACTION_VIEW, Uri.parse("http://www.google.com/calendar/render?action=TEMPLATE&text=Car%20Service%20Drop-off%20Time&dates=20220127T090000/20220127T090000&ctz=Europe/London&details=GaragesNear.me%20Car%20Service%20Drop-off%20time&location=1%20Alfa%20Street,%20Aberdeen&trp=false&sprop=&sprop=name:")) }
 
 //    auth = Firebase.auth
 
@@ -305,10 +318,9 @@ fun ReminderItem(
             }
             Button(
                 onClick = {
-                    db.collection("reminders").document("reference")
-                        .delete()
-                        .addOnSuccessListener { Log.d(TAG, "DocumentSnapshot successfully deleted!") }
-                        .addOnFailureListener { e -> Log.w(TAG, "Error deleting document", e) }
+                    openMessageBox.value = true
+//
+//                    navController.navigate(route = Screens.Reminders.route)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -322,16 +334,87 @@ fun ReminderItem(
                     fontSize = 16.sp
                 )
             }
+            Button(onClick = { con.startActivity(intent) }) {
+                Text(text = "Add to Google Calender")
+            }
         }
     }
 
-    AddReminder(openDialog, con, auth, remindList.get(number), remindList.get(number).id)
+    messageDialogBox(openMessageBox, reference, navController)
+    AddReminder(openDialog, con, auth, remindList.get(number), remindList.get(number).id, navController)
 }
+
+@Composable
+fun messageDialogBox(openMessageBox: MutableState<Boolean>, reference: String, navController: NavController) {
+    val db = Firebase.firestore
+    if (openMessageBox.value) {
+
+        MaterialAlertDialog(
+            onDismissRequest = {
+                // Dismiss the dialog when the user clicks outside the dialog or on the back
+                // button. If you want to disable that functionality, simply use an empty
+                // onCloseRequest.
+                openMessageBox.value = false
+            },
+            title = {
+                Text(text = "Are you sure, Do you want to Delete Reminder")
+            },
+            text = {
+                Text("If you allow, reminder will permanently delete")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        openMessageBox.value = false
+                        db.collection("reminders").document(reference)
+                            .delete()
+                            .addOnSuccessListener { Log.d(TAG, "DocumentSnapshot successfully deleted!") }
+                            .addOnFailureListener { e -> Log.w(TAG, "Error deleting document", e) }
+                    navController.navigate(route = Screens.Reminders.route)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(all = 16.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xffF51720)),
+////
+                ) {
+                    Text(
+                        text = "Delete",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        fontSize = 16.sp
+                        )
+                }
+            },
+            dismissButton = {
+                Button(
+
+                    onClick = {
+                        openMessageBox.value = false
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(all = 16.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xff0b06a6)),
+
+                ) {
+                    Text(
+                        text = "Cancel",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        fontSize = 16.sp
+                    )
+                }
+            }
+        )
+    }
+}
+
 
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AddReminder(openDialogBox: MutableState<Boolean>, con: Context, auth: FirebaseAuth, remindList: DocumentSnapshot, reminderId: String) {
+fun AddReminder(openDialogBox: MutableState<Boolean>, con: Context, auth: FirebaseAuth, remindList: DocumentSnapshot, reminderId: String, navController: NavController) {
 
     val db = Firebase.firestore
     val time = remember { mutableStateOf("") }
@@ -511,6 +594,7 @@ fun AddReminder(openDialogBox: MutableState<Boolean>, con: Context, auth: Fireba
                                         Log.w(MainActivity.TAG, "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++Error adding document", e)
                                     }
                                 openDialogBox.value = false
+                                navController.navigate(route = Screens.Reminders.route)
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -526,6 +610,24 @@ fun AddReminder(openDialogBox: MutableState<Boolean>, con: Context, auth: Fireba
                             )
                         }
                     }
+
+                    Button(
+                        onClick = {
+                            openDialogBox.value = false
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 16.dp),
+                        colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xffF51720)),
+//                    enabled = isEmailValid
+                    ) {
+                        Text(
+                            text = "Close",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontSize = 16.sp
+                        )
+                    }
                 }
             }
         }
@@ -537,7 +639,7 @@ fun AddReminder(openDialogBox: MutableState<Boolean>, con: Context, auth: Fireba
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AddNewReminder(openDialogBox: MutableState<Boolean>, con: Context, auth: FirebaseAuth) {
+fun AddNewReminder(openDialogBox: MutableState<Boolean>, con: Context, auth: FirebaseAuth, navController: NavController) {
 
     val db = Firebase.firestore
     val time = remember { mutableStateOf("") }
@@ -670,6 +772,7 @@ fun AddNewReminder(openDialogBox: MutableState<Boolean>, con: Context, auth: Fir
                                         Log.w(MainActivity.TAG, "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++Error adding document", e)
                                     }
                                 openDialogBox.value = false
+                                navController.navigate(route = Screens.Reminders.route)
 
                             },
                             modifier = Modifier

@@ -50,7 +50,7 @@ fun BottomAppBarWithFab() {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Bottom App Bar with FAB"
+                        text = "Remind me"
                     )
                 },
                 navigationIcon = {
