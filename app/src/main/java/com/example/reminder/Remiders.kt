@@ -252,7 +252,7 @@ fun ReminderItem(
 
     val openDialog = remember { mutableStateOf(false) }
     val openMessageBox = remember { mutableStateOf(false) }
-    val intent = remember { Intent(Intent.ACTION_VIEW, Uri.parse("http://www.google.com/calendar/render?action=TEMPLATE&text=Car%20Service%20Drop-off%20Time&dates=20220127T090000/20220127T090000&ctz=Europe/London&details=GaragesNear.me%20Car%20Service%20Drop-off%20time&location=1%20Alfa%20Street,%20Aberdeen&trp=false&sprop=&sprop=name:")) }
+    val intent = remember { Intent(Intent.ACTION_VIEW, Uri.parse("http://www.google.com/calendar/render?action=TEMPLATE&text=Remind%20Me%20Service%20Time&dates=20220227T090000/20220227T090000&ctz=Europe/London&details=GaragesNear.me%20Its%20Her%20Birthday%20time&location=1%20Tervakkukatie%20Rajakyla,%20Oulu&trp=false&sprop=&sprop=name:")) }
 
 //    auth = Firebase.auth
 
@@ -558,6 +558,11 @@ fun AddReminder(openDialogBox: MutableState<Boolean>, con: Context, auth: Fireba
                                     }
                                 openDialogBox.value = false
 
+                                createNotificationChannel(context = Graph.appContext)
+                                createReminderMadeNotification(reminderModel)
+                                createNotificationChannel3()
+                                scheduleNotification(reminderModel)
+
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -595,6 +600,10 @@ fun AddReminder(openDialogBox: MutableState<Boolean>, con: Context, auth: Fireba
                                     }
                                 openDialogBox.value = false
                                 navController.navigate(route = Screens.Reminders.route)
+                                createNotificationChannel(context = Graph.appContext)
+                                createReminderMadeNotification(reminderModel)
+                                createNotificationChannel3()
+                                scheduleNotification(reminderModel)
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -773,6 +782,10 @@ fun AddNewReminder(openDialogBox: MutableState<Boolean>, con: Context, auth: Fir
                                     }
                                 openDialogBox.value = false
                                 navController.navigate(route = Screens.Reminders.route)
+                                createNotificationChannel(context = Graph.appContext)
+                                createReminderMadeNotification(reminderModel)
+                                createNotificationChannel3()
+                                scheduleNotification(reminderModel)
 
                             },
                             modifier = Modifier

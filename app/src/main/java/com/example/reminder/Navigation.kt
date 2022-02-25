@@ -8,7 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.remi.RegisterScreen
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 
@@ -23,7 +22,7 @@ fun Navigation(
 ) {
     NavHost(navController = navController, startDestination = Screens.Login.route) {
         composable(route = Screens.Login.route) {
-            LoginScreen(Firebase.auth, navController)
+            LoginScreen(Firebase.auth, navController, con)
         }
         composable(route = Screens.Profile.route) {
             ProfileScreen(user = User(email = "ashan@gmail.com", displayName = ""), navController)
