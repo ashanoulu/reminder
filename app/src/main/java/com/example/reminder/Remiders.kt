@@ -41,6 +41,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import com.example.reminder.MainActivity.Companion.TAG
 import com.example.reminder.ui.theme.Purple500
+import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.ktx.firestore
@@ -48,12 +49,6 @@ import com.google.firebase.ktx.Firebase
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.*
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import com.google.firebase.firestore.CollectionReference
 import androidx.compose.material.AlertDialog as MaterialAlertDialog
 
 //@ExperimentalMaterialApi
@@ -99,60 +94,12 @@ fun RemindersScreen(auth: FirebaseAuth, navController: NavController, con: Conte
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-//                Text(
-//                    text = "My reminders",
-//                    color = Color(0xff0b06a6),
-//                    fontFamily = FontFamily.SansSerif,
-//                    fontWeight = FontWeight.Bold,
-//                    fontStyle = FontStyle.Italic,
-//                    fontSize = 32.sp,
-//                    modifier = Modifier.padding(top = 16.dp)
-//                )
-
-//                val hashMap:HashMap<Int,String> = HashMap<Int,String>() //define empty hashmap
-//                val remindersList1:HashMap<String,ReminderModel> = HashMap<String,ReminderModel>()//: MutableList<ReminderModel> = MutableList<ReminderModel>(10,10)
-//
-//                    val query = db.collection("reminders").whereEqualTo("userId", auth.currentUser?.uid.toString())
-//                    .get().addOnSuccessListener {
-//                        documents ->
-//                            for (document in documents) {
-//                                var remind = ReminderModel()
-//                                remind.userId = document.get("userId").toString()
-//                                remind.reference = document.reference.toString()
-//                                remind.time = document.get("time").toString()
-//                                remind.longitude = document.get("longitude").toString()
-//                                remind.latitude = document.get("latitude").toString()
-//                                remind.date = document.get("date").toString()
-//                                remind.description = document.get("description").toString()
-//                                remindersList1[document.id] = remind
-//                            }
-//
-//                        }
 
                 var queryResults = db.collection("reminders").whereEqualTo("userId", auth.currentUser?.uid.toString())
                     .get()
                 LazyColumn {
                     var remindersList: MutableList<ReminderModel> = mutableListOf()
                     var i : Int =1
-
-//                        .addOnSuccessListener {
-//                                documents ->
-//                            //var remindersList: MutableList<ReminderModel> = mutableListOf()
-//                            for (document in documents) {
-//                                var remind = ReminderModel()
-//                                remind.userId = document.get("userId").toString()
-//                                remind.reference = document.reference.toString()
-//                                remind.time = document.get("time").toString()
-//                                remind.longitude = document.get("longitude").toString()
-//                                remind.latitude = document.get("latitude").toString()
-//                                remind.date = document.get("date").toString()
-//                                remind.description = document.get("description").toString()
-//                                remindersList.add(remind)
-//                                i++
-//                            }
-//
-//
-//                        }
 
                     val numOfItems: Int = queryResults.result.documents?.size
 
@@ -252,6 +199,7 @@ fun ReminderItem(
 
     val openDialog = remember { mutableStateOf(false) }
     val openMessageBox = remember { mutableStateOf(false) }
+    val openMapBox = remember { mutableStateOf(false) }
     val intent = remember { Intent(Intent.ACTION_VIEW, Uri.parse("http://www.google.com/calendar/render?action=TEMPLATE&text=Remind%20Me%20Service%20Time&dates=20220227T090000/20220227T090000&ctz=Europe/London&details=GaragesNear.me%20Its%20Her%20Birthday%20time&location=1%20Tervakkukatie%20Rajakyla,%20Oulu&trp=false&sprop=&sprop=name:")) }
 
 //    auth = Firebase.auth
@@ -298,6 +246,15 @@ fun ReminderItem(
                 fontSize = 16.sp,
                 modifier = Modifier.padding(top = 16.dp)
             )
+            Text(
+                text = "Lat: " + latitude + " Long: " + longitude,
+                color = Color(0xff0b06a6),
+                fontFamily = FontFamily.SansSerif,
+                fontWeight = FontWeight.Bold,
+                fontStyle = FontStyle.Italic,
+                fontSize = 16.sp,
+                modifier = Modifier.padding(top = 16.dp)
+            )
 
 
             Button(
@@ -334,6 +291,26 @@ fun ReminderItem(
                     fontSize = 16.sp
                 )
             }
+
+
+            Button(
+                onClick = {
+                    openMapBox.value = true
+//
+//                    navController.navigate(route = Screens.Reminders.route)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(all = 16.dp),
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xff0b06a6)),
+            ) {
+                Text(
+                    text = "Add Location",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    fontSize = 16.sp
+                )
+            }
             Button(onClick = { con.startActivity(intent) }) {
                 Text(text = "Add to Google Calender")
             }
@@ -342,6 +319,7 @@ fun ReminderItem(
 
     messageDialogBox(openMessageBox, reference, navController)
     AddReminder(openDialog, con, auth, remindList.get(number), remindList.get(number).id, navController)
+    AddLocation(openMapDialogBox = openMapBox, con = con, auth = auth, remindList.get(number), remindList.get(number).id, navController = navController)
 }
 
 @Composable
@@ -506,35 +484,35 @@ fun AddReminder(openDialogBox: MutableState<Boolean>, con: Context, auth: Fireba
                         )
                     )
 
-                    OutlinedTextField(value = longitude,
-                        onValueChange = { longitude = it },
-                        label = { Text("Longitude") },
-                        placeholder = { Text("-77.0364") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-//                        onNext = { focusManager.clearFocus() }
-                        )
-                    )
-
-                    OutlinedTextField(value = latitude,
-                        onValueChange = { latitude = it },
-                        label = { Text("Latitude") },
-                        placeholder = { Text("-77.0364") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-//                        onNext = { focusManager.clearFocus() }
-                        )
-                    )
+//                    OutlinedTextField(value = longitude,
+//                        onValueChange = { longitude = it },
+//                        label = { Text("Longitude") },
+//                        placeholder = { Text("-77.0364") },
+//                        singleLine = true,
+//                        modifier = Modifier.fillMaxWidth(),
+//                        keyboardOptions = KeyboardOptions(
+//                            keyboardType = KeyboardType.Text,
+//                            imeAction = ImeAction.Done
+//                        ),
+//                        keyboardActions = KeyboardActions(
+////                        onNext = { focusManager.clearFocus() }
+//                        )
+//                    )
+//
+//                    OutlinedTextField(value = latitude,
+//                        onValueChange = { latitude = it },
+//                        label = { Text("Latitude") },
+//                        placeholder = { Text("-77.0364") },
+//                        singleLine = true,
+//                        modifier = Modifier.fillMaxWidth(),
+//                        keyboardOptions = KeyboardOptions(
+//                            keyboardType = KeyboardType.Text,
+//                            imeAction = ImeAction.Done
+//                        ),
+//                        keyboardActions = KeyboardActions(
+////                        onNext = { focusManager.clearFocus() }
+//                        )
+//                    )
 
                     if (reminderId == "") {
                         Button(
@@ -667,6 +645,7 @@ fun AddNewReminder(openDialogBox: MutableState<Boolean>, con: Context, auth: Fir
     var enteredTime by rememberSaveable { mutableStateOf("") }
     var created_at by rememberSaveable { mutableStateOf("") }
     var is_seen by rememberSaveable { mutableStateOf(false) }
+    val isChecked = remember { mutableStateOf(true) }
 
 
 
@@ -730,36 +709,47 @@ fun AddNewReminder(openDialogBox: MutableState<Boolean>, con: Context, auth: Fir
                         )
                     )
 
-                    OutlinedTextField(value = longitude,
-                        onValueChange = { longitude = it },
-                        label = { Text("Longitude") },
-                        placeholder = { Text("-77.0364") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-//                        onNext = { focusManager.clearFocus() }
-                        )
-                    )
+//                    OutlinedTextField(value = longitude,
+//                        onValueChange = { longitude = it },
+//                        label = { Text("Longitude") },
+//                        placeholder = { Text("-77.0364") },
+//                        singleLine = true,
+//                        modifier = Modifier.fillMaxWidth(),
+//                        keyboardOptions = KeyboardOptions(
+//                            keyboardType = KeyboardType.Text,
+//                            imeAction = ImeAction.Done
+//                        ),
+//                        keyboardActions = KeyboardActions(
+////                        onNext = { focusManager.clearFocus() }
+//                        )
+//                    )
+//
+//                    OutlinedTextField(value = latitude,
+//                        onValueChange = { latitude = it },
+//                        label = { Text("Latitude") },
+//                        placeholder = { Text("-77.0364") },
+//                        singleLine = true,
+//                        modifier = Modifier.fillMaxWidth(),
+//                        keyboardOptions = KeyboardOptions(
+//                            keyboardType = KeyboardType.Text,
+//                            imeAction = ImeAction.Done
+//                        ),
+//                        keyboardActions = KeyboardActions(
+////                        onNext = { focusManager.clearFocus() }
+//                        )
+//                    )
 
-                    OutlinedTextField(value = latitude,
-                        onValueChange = { latitude = it },
-                        label = { Text("Latitude") },
-                        placeholder = { Text("-77.0364") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-//                        onNext = { focusManager.clearFocus() }
-                        )
-                    )
+                    Row(modifier = Modifier.padding(8.dp)) {
 
+
+                        Checkbox(
+                            checked = isChecked.value,
+                            onCheckedChange = { isChecked.value = it },
+                            enabled = true,
+                            colors = CheckboxDefaults.colors(Color(0xff0b06a6))
+                        )
+                        Text(text = " Notify me")
+                    }
 
                         Button(
                             onClick = {
@@ -784,8 +774,11 @@ fun AddNewReminder(openDialogBox: MutableState<Boolean>, con: Context, auth: Fir
                                 navController.navigate(route = Screens.Reminders.route)
                                 createNotificationChannel(context = Graph.appContext)
                                 createReminderMadeNotification(reminderModel)
-                                createNotificationChannel3()
-                                scheduleNotification(reminderModel)
+
+                                if(isChecked.value) {
+                                    createNotificationChannel3()
+                                    scheduleNotification(reminderModel)
+                                }
 
                             },
                             modifier = Modifier
@@ -801,6 +794,121 @@ fun AddNewReminder(openDialogBox: MutableState<Boolean>, con: Context, auth: Fir
                                 fontSize = 16.sp
                             )
                         }
+
+                }
+            }
+        }
+
+//        ShowTimePicker(con, 0, 0)
+    }
+}
+
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun AddLocation(
+    openMapDialogBox: MutableState<Boolean>,
+    con: Context,
+    auth: FirebaseAuth,
+    remindList: DocumentSnapshot,
+    reminderId: String,
+    navController: NavController
+) {
+
+    val db = Firebase.firestore
+    val time = remember { mutableStateOf("") }
+    val timePickerDialog = TimePickerDialog(
+        con,
+        { _, hour: Int, minute: Int ->
+            time.value = "$hour:$minute"
+        }, 0, 0, false
+    )
+
+    var description by rememberSaveable { mutableStateOf("") }
+    var userId by rememberSaveable { mutableStateOf("") }
+    var longitude by rememberSaveable { mutableStateOf("") }
+    var latitude by rememberSaveable { mutableStateOf("") }
+    var date by rememberSaveable { mutableStateOf("") }
+    var enteredTime by rememberSaveable { mutableStateOf("") }
+    var created_at by rememberSaveable { mutableStateOf("") }
+    var is_seen by rememberSaveable { mutableStateOf(false) }
+    val isChecked = remember { mutableStateOf(true) }
+
+    description = remindList.get("description").toString()
+    userId = remindList.get("userId").toString()
+    longitude = remindList.get("longitude").toString()
+    latitude = remindList.get("latitude").toString()
+    date = remindList.get("date").toString()
+    enteredTime = remindList.get("time").toString()
+    created_at = remindList.get("created_at").toString()
+
+
+
+    if (openMapDialogBox.value) {
+
+        Dialog(onDismissRequest = { /*TODO*/ }) {
+            ReminderLocationMap(latitude, longitude, navController)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, Color.Black)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(all = 10.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            val latlng = navController
+                                .currentBackStackEntry
+                                ?.savedStateHandle
+                                ?.getLiveData<LatLng>("location_data")
+                                ?.value
+
+                            var reminderModel = ReminderModel()
+                            reminderModel.userId = auth.currentUser?.uid.toString()
+                            reminderModel.description = description
+                            reminderModel.date = date
+                            reminderModel.seen = is_seen
+                            reminderModel.latitude = latlng?.latitude.toString()
+                            reminderModel.longitude = latlng?.longitude.toString()
+                            reminderModel.time = enteredTime
+
+                            if(reminderModel.latitude != "" && reminderModel.latitude != "null" && reminderModel.latitude != null) {
+                                db.collection("reminders")
+                                    .document(reminderId)
+                                    .set(reminderModel)
+                                    .addOnSuccessListener { documentReference ->
+                                        Log.d(MainActivity.TAG, "------------------------------------------------------------DocumentSnapshot added with ID: ${reminderModel.userId}")
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Log.w(MainActivity.TAG, "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++Error adding document", e)
+                                    }
+                            }
+                            openMapDialogBox.value = false
+                            navController.navigate(route = Screens.Reminders.route)
+//                            createNotificationChannel(context = Graph.appContext)
+//                            createReminderMadeNotification(reminderModel)
+//                            createNotificationChannel3()
+//                            scheduleNotification(reminderModel)
+
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 16.dp),
+                        colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xff0b06a6)),
+//                    enabled = isEmailValid
+                    ) {
+                        Text(
+                            text = "Set Location",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontSize = 16.sp
+                        )
+                    }
 
                 }
             }
